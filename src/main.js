@@ -2,9 +2,8 @@ define("main", [
   "jquery",
   "underscore",
   "lib/backbone",
-  "loader",
   "config"
-], function ($, _, Backbone, loadNodes, ffmapConfig) {
+], function ($, _, Backbone, ffmapConfig) {
   "use strict"
 
   var apps = new Backbone.Collection([/*{
@@ -20,8 +19,6 @@ define("main", [
     target: "list",
     dependencies: ["list"]
   }*/])
-
-  var graph = loadNodes(ffmapConfig.nodesJSON)
 
   function getQueryParams(query) {
     query = query || ""
@@ -42,8 +39,7 @@ define("main", [
         var params = getQueryParams(query)
         if (app.createMainView)
           app.createMainView(_.extend({
-            el: ".container",
-            stream: graph
+            el: ".container"
           }, params)).render()
 
         if (app.createMenu)

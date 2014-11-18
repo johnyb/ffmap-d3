@@ -1,4 +1,4 @@
-define("loader", [
+define("file_loader", [
   "lib/d3",
   "lib/Bacon"
 ], function (d3, Bacon) {

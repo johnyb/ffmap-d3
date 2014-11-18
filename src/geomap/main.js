@@ -3,89 +3,108 @@ define("geomap/main", [
   "lib/backbone",
   "lib/leaflet-src",
   "lib/Bacon",
-  "lib/d3"
-], function ($, Backbone, L, Bacon, d3) {
+  "lib/d3",
+  "graph"
+], function ($, Backbone, L, Bacon, d3, graph) {
   "use strict"
+
+  var GeoNode = graph.Node.extend({
+    projectLocation: function () {
+      return this.collection.project(this.get("nodeinfo").location)
+    },
+    lat: function () {
+      return this.get("nodeinfo").location.latitude
+    },
+    lon: function () {
+      return this.get("nodeinfo").location.longitude
+    },
+    online: function () {
+      return this.get("flags").online
+    },
+    firmware: function () {
+      return this.get("nodeinfo") && this.get("nodeinfo").software && this.get("nodeinfo").software.firmware
+    }
+  })
+  var GeoNodes = graph.Nodes.extend({
+    initialize: function () {
+      graph.Nodes.prototype.initialize.apply(this, arguments)
+
+      this.listenTo(this, "reset", function (c, options) {
+        options.previousModels.forEach(function (m) {
+          m.trigger("destroy")
+        })
+      })
+    },
+    model: GeoNode,
+    filterNode: function (n) {
+      return n.nodeinfo && n.nodeinfo.hasOwnProperty("location")
+    },
+    project: function (point) {
+      return this.graph.project(point)
+    }
+  })
 
   var Graph = Backbone.Model.extend({
     initialize: function (options) {
-      this.stream = options.stream
       this.map = options.map
 
-      this.nodes = this.stream.flatMap(function (data) {
-        return data.nodes.filter(function (node) {
-          return node.geo !== null
-        })
-      })
-
-      this.bounds = this.nodes.scan({}, function (bounds, nodes) {
-        var t = [
-          d3.extent(nodes, function (d) { return d.geo[0] }),
-          d3.extent(nodes, function (d) { return d.geo[1] })
-        ]
-        var border = 0.0
-        bounds.x1 = t[0][1] + border
-        bounds.y1 = t[1][1] + border
-        bounds.x2 = t[0][0] - border
-        bounds.y2 = t[1][0] - border
-
-        return bounds
-      })
-
-      this.bounds.changes().onValue(this, "set", "bounds")
+      var nodes = new GeoNodes()
+      nodes.graph = this
+      this.set("nodes", nodes, { silent: true })
     },
     project: function (x) {
-      var point = this.map.latLngToLayerPoint(new L.LatLng(x[0], x[1]))
+      var point = this.map.latLngToLayerPoint(new L.LatLng(x.latitude, x.longitude))
       return [point.x, point.y]
     }
 
   })
 
-  var NodesOverlayView = Backbone.View.extend({
-    tagName: "svg",
-    margin: 300,
+  var NodeView = Backbone.View.extend({
     initialize: function (options) {
-      if (options.parent) $(options.parent).append(this.$el)
-      this.$nodes = $("<g>").addClass("nodes")
+      this.map = options.map
 
-      this.model.nodes.flatMap(function (model, $nodes, nodes) {
-        return nodes.map(function (n) {
-          var newNode = $("<g>").addClass("node")
-          return newNode.append(
-            $("<circle>")
-              .attr("r", "4pt")
-              .attr("fill", n.flags.online ? (!n.firmware ? "rgba(255, 55, 55, 1.0)" : "rgba(0, 255, 0, 0.8)") : "rgba(128, 128, 128, 0.2)")
-              .attr("transform", "translate(" + model.project(n.geo).join(",") + ")")
-              .append(
-                $("<title>").text(n.name ? n.name : n.id)
-              )
-          )
-        }).reduce(function (acc, $n) {
-          return acc.append($n)
-        }, $nodes)
-      }, this.model, this.$nodes).onValue(function (v) {
-        console.log(v)
-      })
-
-      this.listenTo(this.model, "change:bounds", this.updateBounds)
+      this.listenTo(this.model, "change", this.render)
+      this.listenTo(this.model, "destroy", this.removeMarker)
     },
-    updateBounds: function (model, b) {
-      this.$el
-        .attr("width", b.x2 - b.x1 + 2 * this.margin)
-        .attr("height", b.y2 - b.y1 + 2 * this.margin)
-        .css("margin-left", (b.x1 - this.margin) + "px")
-        .css("margin-top", (b.y2 - this.margin) +  "px")
-
-      this.$el.find(".leaflet-zoom-hide").attr("transform", "translate(" + (this.margin - b.x1) + "," + (this.margin - b.y2) + ")")
+    removeMarker: function () {
+      if (this.marker) this.map.removeLayer(this.marker)
     },
     render: function () {
-      var g = $("<g>").addClass("leaflet-zoom-hide")
-      g.append(
-        $("<g>").addClass("links"),
-        $("<g>").addClass("labels"),
-        this.$nodes
-      )
-      this.$el.empty().append(g)
+      this.removeMarker()
+      //TODO: find out, how to do this via css
+      var color = !this.model.firmware() ? "rgba(255, 55, 55, 1.0)" : "rgba(0, 255, 0, 0.8)"
+      color = this.model.online() ? color : "rgba(128, 128, 128, 0.2)"
+      this.marker = L.circleMarker([this.model.lat(), this.model.lon()], {
+        color: color,
+        fillOpacity: 1,
+        radius: 5
+      }).addTo(this.map)
+      return this
+    }
+  })
+
+  var GraphOverlayView = Backbone.View.extend({
+    initialize: function (options) {
+      if (options.parent) $(options.parent).append(this.$el)
+
+      this.listenTo(this.model.get("nodes"), "reset", this.render)
+    },
+    renderNodes: function () {
+      this.model.get("nodes").forEach(function (n) {
+        new NodeView({
+        model: n,
+        map: this.model.map
+        }).render()
+      }.bind(this))
+
+      return this
+    },
+    renderEdges: function () {
+        return this
+    },
+    render: function () {
+      this.renderNodes()
+      this.renderEdges()
       return this
     }
   })
@@ -108,18 +127,12 @@ define("geomap/main", [
         opacity: 0.7
       }))
 
-      this.nodes = new NodesOverlayView({
+      this.graph = new GraphOverlayView({
         parent: this.map.getPanes().overlayPane,
         model: new Graph({
-          stream: options.stream,
           map: this.map
         })
       })
-
-
-      this.nodes.model.bounds.changes().take(1).map(function (b) {
-        return [[b.x1, b.y1], [b.x2, b.y2]]
-      }).onValue(this.map, "fitBounds")
 
       this.lat = options.lat || 0
       this.lon = options.lon || 0
@@ -129,7 +142,7 @@ define("geomap/main", [
     render: function () {
       this.$el.empty().append(this.$map)
       this.map.invalidateSize()
-      this.nodes.render()
+      this.graph.render()
       return this
     }
   })
@@ -140,6 +153,10 @@ define("geomap/main", [
         $("<button>")
           .attr("id", "gpsbutton")
           .text("Koordinaten beim nächsten Klick anzeigen")
+          .on("click", function () {
+            console.log(mainView)
+          }
+        )
       )
 
       return this
