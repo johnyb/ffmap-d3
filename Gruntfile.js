@@ -11,5 +11,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask("default", ["checkDependencies", "eslint", "newer:copy", "newer:uglify"])
   grunt.registerTask("lint", ["eslint"])
-  grunt.registerTask("dev", ["default", "connect:server", "watch"])
+  grunt.registerTask("dev", ["default", "connect:server", "karma:unit:start", "watch"])
+  grunt.registerTask("testrun", ["default", "karma:ci"])
 }

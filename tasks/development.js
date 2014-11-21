@@ -16,7 +16,7 @@ module.exports = function (grunt) {
           livereload: true
         },
         files: ["{css,img}/*.png", "css/*.css", "src/**/*.js", "templates/*.html"],
-        tasks: ["default"]
+        tasks: ["default", "karma:unit:run"]
       },
       config: {
         options: {
