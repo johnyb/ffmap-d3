@@ -3,6 +3,7 @@ define("graph", [
   "underscore",
   "lib/backbone"
 ], function (io, _, Backbone) {
+  "use strict"
 
   var Node = Backbone.Model.extend({
   })
@@ -14,12 +15,7 @@ define("graph", [
       var self = this
       this.socket.on("refresh", function (data) {
         self.reset(
-          _(data.nodes).pairs()
-          .map(function (n) {
-            n[1].id = n[0]
-            return n[1]
-          })
-          .filter(self.filterNode)
+          _(data.nodes).filter(self.filterNode)
         )
       })
     },
