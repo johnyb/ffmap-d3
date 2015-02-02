@@ -10,19 +10,19 @@ define("geomap/main", [
 
   var GeoNode = graph.Node.extend({
     projectLocation: function () {
-      return this.collection.project(this.get("geo"))
+      return this.collection.project(this.get("nodeinfo").location)
     },
     lat: function () {
-      return this.get("geo")[0]
+      return this.get("nodeinfo").location.latitude
     },
     lon: function () {
-      return this.get("geo")[1]
+      return this.get("nodeinfo").location.longitude
     },
     online: function () {
       return this.get("flags").online
     },
     firmware: function () {
-      return this.get("firmware")
+      return this.get("nodeinfo") && this.get("nodeinfo").software && this.get("nodeinfo").software.firmware
     }
   })
   var GeoNodes = graph.Nodes.extend({
@@ -37,7 +37,7 @@ define("geomap/main", [
     },
     model: GeoNode,
     filterNode: function (n) {
-      return n.geo && n.geo[0] && n.geo[1]
+      return n.nodeinfo && n.nodeinfo.hasOwnProperty("location")
     },
     project: function (point) {
       return this.graph.project(point)
@@ -53,7 +53,7 @@ define("geomap/main", [
       this.set("nodes", nodes, { silent: true })
     },
     project: function (x) {
-      var point = this.map.latLngToLayerPoint(new L.LatLng(x[0], x[1]))
+      var point = this.map.latLngToLayerPoint(new L.LatLng(x.latitude, x.longitude))
       return [point.x, point.y]
     }
 
