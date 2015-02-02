@@ -87,7 +87,13 @@ define("geomap/main", [
     initialize: function (options) {
       if (options.parent) $(options.parent).append(this.$el)
 
-      this.listenTo(this.model.get("nodes"), "reset", this.render)
+      this.listenTo(this.model.get("nodes"), "add", this.renderNode)
+    },
+    renderNode: function (node) {
+      new NodeView({
+        model: node,
+        map: this.model.map
+      }).render()
     },
     renderNodes: function () {
       this.model.get("nodes").forEach(function (n) {

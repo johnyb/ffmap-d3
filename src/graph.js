@@ -13,10 +13,12 @@ define("graph", [
       this.options = options
       this.socket = io.connect()
       var self = this
-      this.socket.on("refresh", function (data) {
-        self.reset(
-          _(data.nodes).filter(self.filterNode)
-        )
+      this.socket.on("nodes:reset", function () {
+        self.reset([])
+      })
+      this.socket.on("nodes:add", function (node) {
+        if (self.filterNode(node))
+          self.add(node)
       })
     },
     model: Node,
