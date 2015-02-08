@@ -1,7 +1,7 @@
 define("geomap/main", [
   "jquery",
   "lib/backbone",
-  "lib/leaflet-src",
+  "lib/leaflet",
   "lib/Bacon",
   "lib/d3",
   "graph"
@@ -133,12 +133,16 @@ define("geomap/main", [
         opacity: 0.7
       }))
 
+      var cluster = new L.MarkerClusterGroup()
+
       this.graph = new GraphOverlayView({
         parent: this.map.getPanes().overlayPane,
         model: new Graph({
-          map: this.map
+          map: cluster
         })
       })
+
+      this.map.addLayer(cluster)
 
       this.lat = options.lat || 0
       this.lon = options.lon || 0

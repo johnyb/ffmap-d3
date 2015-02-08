@@ -38,6 +38,12 @@ module.exports = function(grunt) {
         expand: true,
         cwd: "bower_components/leaflet/dist",
         dest: "build/css"
+      },
+      "markercluster-css": {
+        src: ["MarkerCluster.css", "MarkerCluster.Default.css"],
+        expand: true,
+        cwd: "bower_components/leaflet.markercluster/dist",
+        dest: "build/css"
       }
     },
     uglify: {
@@ -63,12 +69,21 @@ module.exports = function(grunt) {
           "bower_components/bacon/dist/Bacon.js",
           "bower_components/d3/d3.js",
           "bower_components/leaflet/dist/leaflet-src.js",
+          "bower_components/leaflet.markercluster/dist/leaflet.markercluster-src.js",
           "bower_components/jquery.tablesorter/js/jquery.tablesorter.js",
           "bower_components/backbone/backbone.js"
         ],
         expand: true,
         flatten: true,
         dest: "build/js/lib"
+      },
+      leaflet: {
+        files: {
+          "build/js/lib/leaflet.js": [
+            "bower_components/leaflet/dist/leaflet-src.js",
+            "bower_components/leaflet.markercluster/dist/leaflet.markercluster-src.js"
+          ]
+        }
       },
       script: {
         src: ["**/*.js"],
