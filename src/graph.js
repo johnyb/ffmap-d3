@@ -16,9 +16,13 @@ define("graph", [
       this.socket.on("nodes:reset", function () {
         self.reset([])
       })
-      this.socket.on("nodes:add", function (node) {
-        if (self.filterNode(node))
-          self.add(node)
+      this.socket.on("nodes:add", function (nodes) {
+        if (!_.isArray(nodes)) nodes = [nodes]
+        _.defer(function () {
+          self.add(nodes.filter(function (node) {
+            return self.filterNode(node)
+          }))
+        })
       })
     },
     model: Node,
