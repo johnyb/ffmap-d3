@@ -48,6 +48,31 @@ define("geomap/main", [
     }
   })
 
+  var GeoLink = graph.Link.extend({
+    initialize: function () {
+      graph.Link.prototype.initialize.apply(this, arguments)
+    },
+    target: function () {
+      return this.collection.graph.get("nodes").get(this.get("target")) || {
+        isValid: function () { return false }
+      }
+    },
+    source: function () {
+      return this.collection.graph.get("nodes").get(this.get("source")) || {
+        isValid: function () { return false }
+      }
+    },
+    isValid: function () {
+      return this.get("type") === "node" && this.target().isValid() && this.source().isValid()
+    }
+  })
+  var GeoLinks = graph.Links.extend({
+    initialize: function () {
+      graph.Links.prototype.initialize.apply(this, arguments)
+    },
+    model: GeoLink
+  })
+
   var Graph = Backbone.Model.extend({
     initialize: function (options) {
       this.map = options.map
@@ -55,6 +80,10 @@ define("geomap/main", [
       var nodes = new GeoNodes()
       nodes.graph = this
       this.set("nodes", nodes, { silent: true })
+
+      var links = new GeoLinks()
+      links.graph = this
+      this.set("links", links, { silent: true })
     },
     project: function (x) {
       var point = this.map.latLngToLayerPoint(new L.LatLng(x.latitude, x.longitude))
@@ -87,16 +116,44 @@ define("geomap/main", [
     }
   })
 
+  var LinkView = Backbone.View.extend({
+    initialize: function (options) {
+      this.map = options.map
+
+      this.listenTo(this.model, "change", this.render)
+      this.listenTo(this.model, "destroy", this.removeMarker)
+    },
+    removeMarker: function () {
+      if (this.marker) this.map.removeLayer(this.marker)
+    },
+    render: function () {
+      this.removeMarker()
+      if (!this.model.get("geometry")) return this
+
+      this.marker = L.geoJson(this.model.get("geometry")).addTo(this.map)
+
+      return this
+    }
+  })
+
   var GraphOverlayView = Backbone.View.extend({
     initialize: function (options) {
       if (options.parent) $(options.parent).append(this.$el)
 
       this.listenTo(this.model.get("nodes"), "add", this.renderNode)
+      this.listenTo(this.model.get("links"), "add", this.renderLink)
     },
     renderNode: function (node) {
       if (!node.isValid()) return
       new NodeView({
         model: node,
+        map: this.model.map
+      }).render()
+    },
+    renderLink: function (link) {
+      if (!link.isValid()) return
+      new LinkView({
+        model: link,
         map: this.model.map
       }).render()
     },
@@ -108,7 +165,11 @@ define("geomap/main", [
       return this
     },
     renderEdges: function () {
-        return this
+      this.model.get("links").forEach(function (l) {
+        this.renderLink(l)
+      }.bind(this))
+
+      return this
     },
     render: function () {
       this.renderNodes()

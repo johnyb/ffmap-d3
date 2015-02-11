@@ -31,8 +31,34 @@ define("graph", [
     model: Node
   })
 
+  var Link = Backbone.Model.extend({
+    isValid: function () {
+      return true
+    }
+  })
+
+  var Links = Backbone.Collection.extend({
+    initialize: function (options) {
+      this.options = options
+      var self = this
+      socket.on("links:reset", function () {
+        self.reset([])
+      })
+      socket.on("links:add", function (links) {
+        if (!_.isArray(links)) links = [links]
+        _.defer(function () {
+          self.add(links)
+        })
+      })
+      socket.emit("refresh:links")
+    },
+    model: Link
+  })
+
   return {
     Nodes: Nodes,
-    Node: Node
+    Node: Node,
+    Link: Link,
+    Links: Links
   }
 })
