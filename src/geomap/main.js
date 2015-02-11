@@ -13,9 +13,13 @@ define("geomap/main", [
       return this.collection.project(this.get("nodeinfo").location)
     },
     lat: function () {
+      if (this.get("nodeinfo").location.type === "Point")
+          return this.get("nodeinfo").location.coordinates[1]
       return this.get("nodeinfo").location.latitude
     },
     lon: function () {
+      if (this.get("nodeinfo").location.type === "Point")
+        return this.get("nodeinfo").location.coordinates[0]
       return this.get("nodeinfo").location.longitude
     },
     online: function () {
