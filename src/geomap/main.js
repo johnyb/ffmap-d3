@@ -27,6 +27,9 @@ define("geomap/main", [
     },
     firmware: function () {
       return this.get("nodeinfo") && this.get("nodeinfo").software && this.get("nodeinfo").software.firmware
+    },
+    isValid: function () {
+      return this.get("nodeinfo") && this.get("nodeinfo").hasOwnProperty("location")
     }
   })
   var GeoNodes = graph.Nodes.extend({
@@ -40,9 +43,6 @@ define("geomap/main", [
       })
     },
     model: GeoNode,
-    filterNode: function (n) {
-      return n.nodeinfo && n.nodeinfo.hasOwnProperty("location")
-    },
     project: function (point) {
       return this.graph.project(point)
     }
@@ -94,6 +94,7 @@ define("geomap/main", [
       this.listenTo(this.model.get("nodes"), "add", this.renderNode)
     },
     renderNode: function (node) {
+      if (!node.isValid()) return
       new NodeView({
         model: node,
         map: this.model.map
@@ -101,10 +102,7 @@ define("geomap/main", [
     },
     renderNodes: function () {
       this.model.get("nodes").forEach(function (n) {
-        new NodeView({
-        model: n,
-        map: this.model.map
-        }).render()
+        this.renderNode(n)
       }.bind(this))
 
       return this

@@ -6,29 +6,29 @@ define("graph", [
   "use strict"
 
   var Node = Backbone.Model.extend({
+    isValid: function () {
+      return true
+    }
   })
+
+  var socket = io.connect()
 
   var Nodes = Backbone.Collection.extend({
     initialize: function (options) {
       this.options = options
-      this.socket = io.connect()
       var self = this
-      this.socket.on("nodes:reset", function () {
+      socket.on("nodes:reset", function () {
         self.reset([])
       })
-      this.socket.on("nodes:add", function (nodes) {
+      socket.on("nodes:add", function (nodes) {
         if (!_.isArray(nodes)) nodes = [nodes]
         _.defer(function () {
-          self.add(nodes.filter(function (node) {
-            return self.filterNode(node)
-          }))
+          self.add(nodes)
         })
       })
+      socket.emit("refresh:nodes")
     },
-    model: Node,
-    filterNode: function () {
-      return true
-    }
+    model: Node
   })
 
   return {
