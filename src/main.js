@@ -19,6 +19,7 @@ define("main", [
     target: "list",
     dependencies: ["list"]
   }*/])
+  var currentApp
 
   function getQueryParams(query) {
     query = query || ""
@@ -37,6 +38,9 @@ define("main", [
     openApp: function (target, query) {
       require([target + "/main"], function (app) {
         var params = getQueryParams(query)
+        if (currentApp === app && _.isFunction(app.trigger))
+          app.trigger("route", params)
+
         if (app.createMainView)
           app.createMainView(_.extend({
             el: ".container"
@@ -48,6 +52,7 @@ define("main", [
           }, params)).render()
 
         if (app.run) app.run()
+        currentApp = app
       })
     }
   })

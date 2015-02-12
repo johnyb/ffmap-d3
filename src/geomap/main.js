@@ -1,11 +1,13 @@
 define("geomap/main", [
   "jquery",
+  "underscore",
   "lib/backbone",
   "lib/leaflet",
   "lib/Bacon",
   "lib/d3",
-  "graph"
-], function ($, Backbone, L, Bacon, d3, graph) {
+  "graph",
+  "main"
+], function ($, _, Backbone, L, Bacon, d3, graph, app) {
   "use strict"
 
   var GeoNode = graph.Node.extend({
@@ -211,6 +213,20 @@ define("geomap/main", [
       this.lon = options.lon || 0
       this.zoom = options.zoom || this.map.getMaxZoom()
       this.map.setView(L.latLng(this.lat, this.lon), this.zoom)
+
+      this.map.on("moveend", _.throttle(function (ev) {
+        var map = ev.target
+        var center = map.getCenter()
+        var zoom = map.getZoom()
+
+        app.router.navigate("geomap?lat=" + center.lat + "&lon=" + center.lng + "&zoom=" + zoom)
+      }, 1000, { leading: false }))
+      this.listenTo(this, "route", function (params) {
+        this.lat = params.lat || 0
+        this.lon = params.lon || 0
+        this.zoom = params.zoom || this.zoom || this.map.getMaxZoom()
+        this.map.setView(L.latLng(this.lat, this.lon), this.zoom)
+      })
     },
     render: function () {
       this.$el.empty().append(this.$map)
@@ -250,6 +266,9 @@ define("geomap/main", [
       return menuView
     },
     run: function () {
+    },
+    trigger: function () {
+      if (mainView) mainView.trigger.apply(mainView, arguments)
     }
   }
 })
