@@ -198,7 +198,11 @@ define("geomap/main", [
         opacity: 0.7
       }))
 
-      var cluster = new L.MarkerClusterGroup()
+      var cluster = new L.MarkerClusterGroup({
+        disableClusteringAtZoom: 16,
+        maxClusterRadius: 50,
+        chunkedLoading: true
+      })
 
       this.graph = new GraphOverlayView({
         parent: this.map.getPanes().overlayPane,
