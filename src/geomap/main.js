@@ -106,13 +106,14 @@ define("geomap/main", [
     },
     render: function () {
       this.removeMarker()
-      //TODO: find out, how to do this via css
-      var color = !this.model.firmware() ? "rgba(255, 55, 55, 1.0)" : "rgba(0, 255, 0, 0.8)"
-      color = this.model.online() ? color : "rgba(128, 128, 128, 0.2)"
+      var flags = ["node"]
+      if (!this.model.firmware()) flags.push("legacy")
+      flags.push(this.model.online() ? "online" : "offline")
+
       this.marker = L.circleMarker([this.model.lat(), this.model.lon()], {
-        color: color,
         fillOpacity: 1,
-        radius: 5
+        radius: 5,
+        className: flags.join(" ")
       }).addTo(this.map)
       return this
     }

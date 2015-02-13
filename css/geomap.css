@@ -7,18 +7,23 @@
   cursor: pointer !important;
 }
 
-.node:hover circle {
+.node:hover {
   stroke: red !important;
   stroke-width: 2pt;
 }
 
 .node {
-  cursor: pointer !important;
-}
-
-.node circle {
   stroke-width: .5pt;
   stroke: #444;
+  fill: rgba(0, 255, 0, 0.8);
+}
+
+.node.legacy {
+  fill: rgba(255, 55, 55, 1);
+}
+
+.node.offline {
+  fill: rgba(128, 128, 128, 0.2);
 }
 
 line.link {
