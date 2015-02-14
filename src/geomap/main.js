@@ -38,8 +38,9 @@ define("geomap/main", [
     initialize: function () {
       graph.Nodes.prototype.initialize.apply(this, arguments)
 
-      this.listenTo(this, "reset", function (c, options) {
-        options.previousModels.forEach(function (m) {
+      this.listenTo(this, "reset remove", function (c, options) {
+        if (c.attributes) c.trigger("destroy")
+        else options.previousModels.forEach(function (m) {
           m.trigger("destroy")
         })
       })
@@ -98,23 +99,38 @@ define("geomap/main", [
     initialize: function (options) {
       this.map = options.map
 
-      this.listenTo(this.model, "change", this.render)
+      this.listenTo(this.model, "change", this.updateClassNames)
       this.listenTo(this.model, "destroy", this.removeMarker)
     },
     removeMarker: function () {
       if (this.marker) this.map.removeLayer(this.marker)
     },
+    updateClassNames: function () {
+      if (!this.marker) return this
+
+      //setStyle does not set the class attribute
+      var container = "_container"
+      var path = this.marker[container] && this.marker[container].getElementsByClassName("node")[0]
+      if (path) {
+        path.classList.toggle("offline", !this.model.online())
+        path.classList.toggle("legacy", !this.model.firmware())
+      }
+
+      return this
+    },
     render: function () {
       this.removeMarker()
-      var flags = ["node"]
-      if (!this.model.firmware()) flags.push("legacy")
-      flags.push(this.model.online() ? "online" : "offline")
 
+      var flags = ["node"]
+      if (!this.model.online()) flags.push("offline")
+      if (!this.model.firmware()) flags.push("legacy")
       this.marker = L.circleMarker([this.model.lat(), this.model.lon()], {
+        className: flags.join(" "),
         fillOpacity: 1,
-        radius: 5,
-        className: flags.join(" ")
-      }).addTo(this.map)
+        radius: 5
+      })
+
+      this.marker.addTo(this.map)
       return this
     }
   })

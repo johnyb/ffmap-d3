@@ -26,6 +26,18 @@ define("graph", [
           self.add(nodes)
         })
       })
+      socket.on("nodes:remove", function (nodes) {
+        if (!_.isArray(nodes)) nodes = [nodes]
+        _.defer(function () {
+          self.remove(nodes)
+        })
+      })
+      socket.on("nodes:update", function (nodes) {
+        if (!_.isArray(nodes)) nodes = [nodes]
+        _.defer(function () {
+          self.add(nodes, { merge: true })
+        })
+      })
       socket.emit("refresh:nodes")
     },
     model: Node
