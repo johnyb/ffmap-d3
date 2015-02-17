@@ -51,38 +51,6 @@ define("geomap/main", [
     }
   })
 
-  var GeoLink = graph.Link.extend({
-    initialize: function () {
-      graph.Link.prototype.initialize.apply(this, arguments)
-
-    this.listenTo(this, "reset remove", function (c, options) {
-        if (c.attributes) c.trigger("destroy")
-        else options.previousModels.forEach(function (m) {
-          m.trigger("destroy")
-        })
-      })
-    },
-    target: function () {
-      return this.collection.graph.get("nodes").get(this.get("target")) || {
-        isValid: function () { return false }
-      }
-    },
-    source: function () {
-      return this.collection.graph.get("nodes").get(this.get("source")) || {
-        isValid: function () { return false }
-      }
-    },
-    isValid: function () {
-      return this.get("type") === "node" && this.target().isValid() && this.source().isValid()
-    }
-  })
-  var GeoLinks = graph.Links.extend({
-    initialize: function () {
-      graph.Links.prototype.initialize.apply(this, arguments)
-    },
-    model: GeoLink
-  })
-
   var Graph = Backbone.Model.extend({
     initialize: function (options) {
       this.map = options.map
@@ -90,10 +58,6 @@ define("geomap/main", [
       var nodes = new GeoNodes()
       nodes.graph = this
       this.set("nodes", nodes, { silent: true })
-
-      var links = new GeoLinks()
-      links.graph = this
-      this.set("links", links, { silent: true })
     },
     project: function (x) {
       var point = this.map.latLngToLayerPoint(new L.LatLng(x.latitude, x.longitude))
@@ -146,8 +110,10 @@ define("geomap/main", [
     initialize: function (options) {
       this.map = options.map
 
-      this.listenTo(this.model, "change", this.updateClassNames)
-      this.listenTo(this.model, "destroy", this.removeMarker)
+      this.source = options.source
+      this.target = options.target
+      this.listenTo(this.source, "destroy", this.removeMarker)
+      this.listenTo(this.target, "destroy", this.removeMarker)
     },
     removeMarker: function () {
       if (this.marker) this.map.removeLayer(this.marker)
@@ -159,9 +125,12 @@ define("geomap/main", [
     },
     render: function () {
       this.removeMarker()
-      if (!this.model.get("geometry")) return this
+      if (!this.source.get("nodeinfo").location || !this.target.get("nodeinfo").location) return this
 
-      this.marker = L.geoJson(this.model.get("geometry"), {
+      var points = []
+      points.push([this.source.lat(), this.source.lon()])
+      points.push([this.target.lat(), this.target.lon()])
+      this.marker = L.polyline(points, {
         className: "link",
         opacity: 1
       })
@@ -177,19 +146,27 @@ define("geomap/main", [
       if (options.parent) $(options.parent).append(this.$el)
 
       this.listenTo(this.model.get("nodes"), "add", this.renderNode)
-      this.listenTo(this.model.get("links"), "add", this.renderLink)
     },
-    renderNode: function (node) {
+    renderNode: function (node, collection) {
       if (!node.isValid()) return
       new NodeView({
         model: node,
         map: this.model.map
       }).render()
+
+      var self = this
+      node.get("neighbours").forEach(function (id) {
+          var neighbour = collection.get(id)
+          if (!neighbour) return
+
+          self.renderLink(node, neighbour)
+      })
     },
-    renderLink: function (link) {
-      if (!link.isValid()) return
+    renderLink: function (source, target) {
+      if (!source.isValid() && !target.isValid()) return
       new LinkView({
-        model: link,
+        source: source,
+        target: target,
         map: this.model.map
       }).render()
     },
@@ -200,16 +177,8 @@ define("geomap/main", [
 
       return this
     },
-    renderEdges: function () {
-      this.model.get("links").forEach(function (l) {
-        this.renderLink(l)
-      }.bind(this))
-
-      return this
-    },
     render: function () {
       this.renderNodes()
-      this.renderEdges()
       return this
     }
   })
