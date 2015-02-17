@@ -54,6 +54,13 @@ define("geomap/main", [
   var GeoLink = graph.Link.extend({
     initialize: function () {
       graph.Link.prototype.initialize.apply(this, arguments)
+
+    this.listenTo(this, "reset remove", function (c, options) {
+        if (c.attributes) c.trigger("destroy")
+        else options.previousModels.forEach(function (m) {
+          m.trigger("destroy")
+        })
+      })
     },
     target: function () {
       return this.collection.graph.get("nodes").get(this.get("target")) || {
@@ -139,17 +146,27 @@ define("geomap/main", [
     initialize: function (options) {
       this.map = options.map
 
-      this.listenTo(this.model, "change", this.render)
+      this.listenTo(this.model, "change", this.updateClassNames)
       this.listenTo(this.model, "destroy", this.removeMarker)
     },
     removeMarker: function () {
       if (this.marker) this.map.removeLayer(this.marker)
     },
+    updateClassNames: function () {
+      if (!this.marker) return this
+
+      return this
+    },
     render: function () {
       this.removeMarker()
       if (!this.model.get("geometry")) return this
 
-      this.marker = L.geoJson(this.model.get("geometry")).addTo(this.map)
+      this.marker = L.geoJson(this.model.get("geometry"), {
+        className: "link",
+        opacity: 1
+      })
+
+      this.marker.addTo(this.map)
 
       return this
     }

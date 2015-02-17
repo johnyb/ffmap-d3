@@ -26,7 +26,7 @@
   fill: rgba(128, 128, 128, 0.2);
 }
 
-line.link {
+.link {
   stroke-width: 2.5pt;
   opacity: 0.5;
 }

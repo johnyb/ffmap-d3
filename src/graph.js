@@ -62,6 +62,18 @@ define("graph", [
           self.add(links)
         })
       })
+      socket.on("links:remove", function (links) {
+        if (!_.isArray(links)) links = [links]
+        _.defer(function () {
+          self.remove(links)
+        })
+      })
+      socket.on("links:update", function (links) {
+        if (!_.isArray(links)) links = [links]
+        _.defer(function () {
+          self.add(links, { merge: true })
+        })
+      })
       socket.emit("refresh:links")
     },
     model: Link
