@@ -247,10 +247,27 @@ define("geomap/main", [
     render: function () {
       this.$el.empty().append(
         $("<button>")
-          .attr("id", "gpsbutton")
-          .text("Koordinaten beim nächsten Klick anzeigen")
+          .attr("id", "addMarker")
+          .text("Knoten einfügen")
           .on("click", function () {
-            console.log(mainView)
+            var marker = L.marker(mainView.map.getCenter(), {
+              draggable: true
+            })
+            marker.on("move", function () {
+              var pos = this.getLatLng()
+              var $el = $("<div>").append(
+                "Position: ",
+                $("<br />"),
+                $("<span>").attr("class", "latitude").text(pos.lat),
+                " : ",
+                $("<span>").attr("class", "longitude").text(pos.lng)
+              )
+              this.setPopupContent(
+                $el[0]
+              )
+            })
+            marker.addTo(mainView.map)
+            marker.bindPopup("Bewege mich an eine bestimmte Position und klicke mich an!").openPopup()
           }
         )
       )
