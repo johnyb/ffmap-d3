@@ -39,6 +39,12 @@ module.exports = function(grunt) {
         cwd: "bower_components/leaflet/dist",
         dest: "build/css"
       },
+      leafletImages: {
+        src: ["images/*.png"],
+        expand: true,
+        cwd: "bower_components/leaflet/dist",
+        dest: "build/js/lib"
+      },
       "markercluster-css": {
         src: ["MarkerCluster.css", "MarkerCluster.Default.css"],
         expand: true,
