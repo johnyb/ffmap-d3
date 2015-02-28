@@ -102,6 +102,11 @@ define("geomap/main", [
       })
 
       this.marker.addTo(this.map)
+      this.marker
+        .bindPopup(JSON.stringify(this.model.get("nodeinfo")))
+        .on("click", function (ev) {
+          ev.target.openPopup()
+        })
       return this
     }
   })
@@ -244,7 +249,15 @@ define("geomap/main", [
   })
 
   var Menu = Backbone.View.extend({
+    initialize: function () {
+      var def = new $.Deferred()
+      this.communityFilter = def
+      require(["community_filter"], function (Filter) {
+        def.resolve(new Filter.View())
+      })
+    },
     render: function () {
+      var self = this
       this.$el.empty().append(
         $("<button>")
           .attr("id", "addMarker")
@@ -271,6 +284,9 @@ define("geomap/main", [
           }
         )
       )
+      this.communityFilter.then(function (view) {
+        self.$el.append(view.render().$el)
+      })
 
       return this
     }

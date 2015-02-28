@@ -1,0 +1,33 @@
+header .communityFilter {
+  display: inline-block;
+}
+
+header .communityFilter > a {
+  padding: 0.5em;
+}
+
+header .communityFilter ul {
+  display: none;
+  position: absolute;
+  background: #000;
+}
+
+header .communityFilter ul li {
+  display: block;
+  padding: 0.2em;
+}
+
+header .communityFilter ul li:hover, header .communityFilter ul li.active {
+  background: #C83771;
+}
+
+header .communityFilter ul li a {
+  height: 100%;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+
+header .communityFilter ul.open {
+  display: block;
+}
