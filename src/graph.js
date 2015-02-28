@@ -1,8 +1,8 @@
 define("graph", [
-  "/socket.io/socket.io.js",
+  "socket_loader",
   "underscore",
   "lib/backbone"
-], function (io, _, Backbone) {
+], function (socket, _, Backbone) {
   "use strict"
 
   var Node = Backbone.Model.extend({
@@ -10,8 +10,6 @@ define("graph", [
       return true
     }
   })
-
-  var socket = io.connect()
 
   var Nodes = Backbone.Collection.extend({
     initialize: function (options) {
